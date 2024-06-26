@@ -21,6 +21,7 @@ opt-level = 3
 [dependencies]
 bevy_asset = "0.13.2"
 bevy_ecs = "0.13"
+bevy_hanabi = {version="0.10.0", default-features=false, features=["2d"]}
 bevy_reflect = "0.13.2"
 bevy_render = "0.13.2"
 compute = "0.2.3"

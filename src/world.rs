@@ -1,12 +1,23 @@
 use bevy::ecs::component::*;
 use bevy::prelude::*;
+use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::PrimaryWindow;
 use compute::distributions::Distribution;
 use compute::prelude::Normal;
 use rand::Rng;
 
+use crate::cloud_material::CloudMaterial;
 use crate::region::Region;
 use crate::region_set::RegionSet;
+
+pub struct WorldPlugin;
+
+impl Plugin for WorldPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, setup)
+            .add_systems(Update, (scroll_camera, despawn_platform, spawn_platform));
+    }
+}
 
 // Create a background camera component
 #[derive(Component)]
@@ -30,30 +41,34 @@ pub fn setup(mut commands: Commands, window: Query<&Window, With<PrimaryWindow>>
     let window = window.get_single().unwrap();
     let width = window.width();
     let height = window.height();
+    let sky_size = 1.2 * Vec2::new(width, height);
 
-    commands.spawn((
-        Camera2dBundle {
-            camera: Camera {
-                clear_color: ClearColorConfig::Custom(DARK_GRAY),
-                ..default()
-            },
-            ..default()
-        },
-        WorldCamera,
-    ));
-
-    let sky_size = 3.0 * width;
-    let ground_width = 120000.0;
-    let ground_height = 60000.0;
-
-    commands.spawn(SpriteBundle {
+    let sky_bundle = SpriteBundle {
         sprite: Sprite {
             color: SKY_BLUE,
-            custom_size: Some(Vec2::new(sky_size, sky_size)),
+            custom_size: Some(sky_size),
             ..default()
         },
         ..default()
-    });
+    };
+
+    commands
+        .spawn((
+            Camera2dBundle {
+                camera: Camera {
+                    clear_color: ClearColorConfig::Custom(DARK_GRAY),
+                    ..default()
+                },
+                ..default()
+            },
+            WorldCamera,
+        ))
+        .with_children(|parent| {
+            parent.spawn(sky_bundle);
+        });
+
+    let ground_width = 120000.0;
+    let ground_height = 60000.0;
 
     // Spawn Ground after Sky (render above)
     commands.spawn((
@@ -66,7 +81,7 @@ pub fn setup(mut commands: Commands, window: Query<&Window, With<PrimaryWindow>>
             transform: Transform::from_translation(Vec3::new(
                 0.0,
                 (-ground_height / 2.0) - (height / 4.0),
-                0.0,
+                1.0,
             )),
             ..default()
         },
@@ -84,7 +99,7 @@ pub fn scroll_camera(
     }
 }
 
-pub fn despawn_ground(
+pub fn despawn_platform(
     mut commands: Commands,
     q_ground: Query<(Entity, &Sprite, &Transform), With<Ground>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<WorldCamera>>,
@@ -107,8 +122,11 @@ pub fn despawn_ground(
     }
 }
 
-pub fn spawn_ground(
+pub fn spawn_platform(
     mut commands: Commands,
+    mut materials: ResMut<Assets<CloudMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    asset_server: Res<AssetServer>,
     q_window: Query<&Window>,
     q_ground: Query<&GlobalTransform, With<Ground>>,
     q_camera: Query<&GlobalTransform, With<WorldCamera>>,
@@ -160,13 +178,12 @@ pub fn spawn_ground(
     if let Some(spawn_region) = region_set.random() {
         let x_coord = rand::thread_rng().gen_range(spawn_region.lower..=spawn_region.upper);
         commands.spawn((
-            SpriteBundle {
-                sprite: Sprite {
-                    color: Color::WHITE,
-                    custom_size: Some(Vec2::new(150.0, 10.0)),
-                    ..default()
-                },
-                transform: Transform::from_translation(Vec3::new(x_coord, top_of_camera, 0.0)),
+            MaterialMesh2dBundle {
+                mesh: meshes.add(Rectangle::new(200., 200.)).into(),
+                transform: Transform::from_xyz(x_coord, top_of_camera, 2.),
+                material: materials.add(CloudMaterial {
+                    blue_noise: Some(asset_server.load("noise/blue-research.png")),
+                }),
                 ..default()
             },
             Ground,

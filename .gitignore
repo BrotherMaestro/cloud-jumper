@@ -22,3 +22,10 @@ cloud-jumper.exe
 
 # Ignore VSCode configuration files
 .vscode/
+
+# Ignore asset files by default (manually include them via lfs)
+*.png
+*.jpg
+
+# Ubuntu-wsl thing created when pasting an image
+*Zone.Identifier 

@@ -184,6 +184,7 @@ pub fn spawn_platform(
                 material: materials.add(CloudMaterial {
                     blue_noise: Some(asset_server.load("noise/blue.png")),
                     perlin_noise: Some(asset_server.load("noise/perlin.png")),
+                    seed: rand::thread_rng().gen(),
                 }),
                 ..default()
             },

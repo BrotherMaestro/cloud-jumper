@@ -12,6 +12,8 @@
 @group(2) @binding(2) var perlin_noise_texture: texture_2d<f32>;
 @group(2) @binding(3) var perlin_noise_sampler: sampler;
 
+@group(2) @binding(4) var<uniform> seed: u32;
+
 const DEPTH = 50.;
 const RENDER_VOLUME = true;
 const CAMERA_Z_DIST = 5.;
@@ -64,8 +66,8 @@ fn densityRaymarch(ro: vec3f, rd: vec3f) -> vec4f {
     let global_illumination = vec3(0.34, 0.34, 0.42);
     var out = vec4(global_illumination, 0.);
 
-    var depth = 0.;
-    var p = ro + depth * rd;
+    let march_step = MARCH_SIZE * rd;
+    var p = ro;
     for (var i = 0; i < STEPS; i = i + 1){
         let density = sdCloud(p);
         if density > 0.0 {
@@ -87,22 +89,35 @@ fn densityRaymarch(ro: vec3f, rd: vec3f) -> vec4f {
             out.a = out.a + (1. - out.a)/2.28;
             out = min(out, vec4(1.));
         }
-        depth = depth + MARCH_SIZE;
-        p = ro + depth * rd;
+        p = p + march_step;
     }
     return out;
 }
 
 fn noise(pos: vec3f) -> f32 {
-    let offset = vec2(8.25, 15.34) + pos.z/1.72;  
+    let time_factor = 0.32;
+
+    // diversify user generated seeds
+    let user_seed_a = f32(seed % 10)/10. - .5;
+    let user_seed_b = f32(seed % 256);
+    let user_seed_c = f32(seed);
+    
+    // transform seeds into usable components for the texture offset
+    let seed_scalar = .9 + user_seed_a;
+    let seed_x = 8.25 + seed_scalar * cos(time_factor * globals.time + user_seed_b);
+    let seed_y = 15.34 + seed_scalar * sin(time_factor * globals.time - user_seed_b);
+    let seed_z = 1.72 + 0.2 * cos(time_factor * globals.time * user_seed_c + 0.2);
+
+    // Use seeds to generate an offset
+    let offset = vec2(seed_x, seed_y) + pos.z/seed_z;  
     let uv = (pos.xy + offset)/64.;
-    // Offset result range to approx. [-0.5 to 0.5],
+
+    // Result to occupy range of approx. [-0.5 to 0.5],
     return textureSample(perlin_noise_texture, perlin_noise_sampler, uv).r - .46;
 }
 
 fn fbm(pos : vec3f) -> f32 {
-    var q = pos; // + globals.time * vec3(1.,1.,1.);
-    
+    var q = pos;    
     var f = 0.;
     var scale = 1.;
     var factor = 2.;

@@ -12,6 +12,8 @@ pub struct CloudMaterial {
     #[texture(2)]
     #[sampler(3)]
     pub perlin_noise: Option<Handle<Image>>,
+    #[uniform(4)]
+    pub seed: u32,
 }
 
 impl Material2d for CloudMaterial {

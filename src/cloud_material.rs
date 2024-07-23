@@ -9,6 +9,9 @@ pub struct CloudMaterial {
     #[texture(0)]
     #[sampler(1)]
     pub blue_noise: Option<Handle<Image>>,
+    #[texture(2)]
+    #[sampler(3)]
+    pub perlin_noise: Option<Handle<Image>>,
 }
 
 impl Material2d for CloudMaterial {

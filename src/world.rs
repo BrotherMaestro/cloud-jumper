@@ -182,7 +182,8 @@ pub fn spawn_platform(
                 mesh: meshes.add(Rectangle::new(200., 200.)).into(),
                 transform: Transform::from_xyz(x_coord, top_of_camera, 2.),
                 material: materials.add(CloudMaterial {
-                    blue_noise: Some(asset_server.load("noise/blue-research.png")),
+                    blue_noise: Some(asset_server.load("noise/blue.png")),
+                    perlin_noise: Some(asset_server.load("noise/perlin.png")),
                 }),
                 ..default()
             },

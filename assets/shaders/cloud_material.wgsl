@@ -27,7 +27,11 @@ fn fragment(
     let uv = 2 * (mesh.uv - 0.5);
     var ro = vec3(0., 0., CAMERA_Z_DIST);
     var rd = normalize(vec3(uv, -1.));
-    return densityRaymarch(ro, rd);
+
+    let blue_noise = textureSample(blue_noise_texture, blue_noise_sampler, uv).r;
+    let offset = fract(blue_noise + f32(globals.time%32)/sqrt(0.5));
+
+    return densityRaymarch(ro, rd, offset);
 }
 
 fn sdSphere(p: vec3f, radius: f32) -> f32 {
@@ -57,41 +61,49 @@ const EPSILON = 0.1;
 const STEPS = 40;
 const MARCH_SIZE = 2*(CAMERA_Z_DIST + EPSILON)/f32(STEPS);
 
-fn densityRaymarch(ro: vec3f, rd: vec3f) -> vec4f {
-    // Normalise light direction here and assign colour
-    let light_direction = normalize(LIGHT_DIRECTION);
-    let light_colour = vec3(1., .65, .32);
+// Hard coded lighting (for now)
+const LIGHT_COLOUR = vec3(1., .85, .52);
+const GLOBAL_ILLUMINATION = vec3(.34, .34, .42);
 
+fn densityRaymarch(ro: vec3f, rd: vec3f, offset: f32) -> vec4f {
     // Establish the minimal illumination of the cloud (base colour)
-    let global_illumination = vec3(0.34, 0.34, 0.42);
-    var out = vec4(global_illumination, 0.);
+    var out = vec4(GLOBAL_ILLUMINATION, 0.);
 
     let march_step = MARCH_SIZE * rd;
-    var p = ro;
+    var p = ro + march_step * offset;
     for (var i = 0; i < STEPS; i = i + 1){
         let density = sdCloud(p);
         if density > 0.0 {
-            // When diffuse > 0, sunlight is supposedly hitting this part of the cloud more directly 
-            // Determine the isolated colour from light direction only
-            let diffuse = (density - sdCloud(p - light_direction));
-            let direction_mixer = 1.2 * max(diffuse, 0.);
-            let direction_colour = mix(light_colour, global_illumination, exp(-direction_mixer));
-
-            // Greater densities reduce the amount of exposed light
-            let dimming_mixer = (1. - out.a)/.09;
-            let dimming_colour = mix(light_colour, global_illumination, exp(-dimming_mixer));
-
-            // Determine the resultant cloud colour
-            let mixed_colour = mix(direction_colour, dimming_colour, exp(-direction_mixer-dimming_mixer));
-            out = vec4(mixed_colour, out.a);
+            // Determine how much light should illuminate this part of the cloud
+            // by considering the cumulative and local densities.
+            let colour = lighting_colour(p, density, out.a);
+            out = vec4(colour, out.a);
 
             // Cummulative density of cloud travelling from camera
-            out.a = out.a + (1. - out.a)/2.28;
+            out.a = out.a + (1. - out.a)/2.38;
             out = min(out, vec4(1.));
         }
         p = p + march_step;
     }
     return out;
+}
+
+fn lighting_colour(pos: vec3f, density: f32, alpha: f32) -> vec3f {
+    // Normalise light direction here and assign colour
+    let light_direction = normalize(LIGHT_DIRECTION);
+
+    // When diffuse > 0, sunlight is supposedly hitting this part of the cloud more directly
+    // Determine the isolated colour from light direction only
+    let diffuse = (density - sdCloud(pos - light_direction));
+    let direction_mixer = 2.2 * max(diffuse, 0.);
+    let direction_colour = mix(LIGHT_COLOUR, GLOBAL_ILLUMINATION, exp(-direction_mixer));
+
+    // Greater densities reduce the amount of exposed light
+    let dimming_mixer = (1. - alpha)/.09;
+    let dimming_colour = mix(LIGHT_COLOUR, GLOBAL_ILLUMINATION, exp(-dimming_mixer));
+
+    // Determine the resultant cloud colour
+    return mix(direction_colour, dimming_colour, exp(-direction_mixer-dimming_mixer));
 }
 
 fn noise(pos: vec3f) -> f32 {

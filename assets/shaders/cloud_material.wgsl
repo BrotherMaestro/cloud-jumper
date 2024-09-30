@@ -29,7 +29,7 @@ fn fragment(
     var rd = normalize(vec3(uv, -1.));
 
     let blue_noise = textureSample(blue_noise_texture, blue_noise_sampler, uv).r;
-    let offset = fract(blue_noise + f32(globals.time%32)/sqrt(0.5));
+    let offset = fract(blue_noise);
 
     return densityRaymarch(ro, rd, offset);
 }
@@ -57,8 +57,8 @@ const COEF_A = 1 / (A*A);
 const COEF_B = 1 / (B*B);
 const COEF_C = 1 / (C*C);
 
-const EPSILON = 0.1;
-const STEPS = 40;
+const EPSILON = 0.25;
+const STEPS = 35;
 const MARCH_SIZE = 2*(CAMERA_Z_DIST + EPSILON)/f32(STEPS);
 
 // Hard coded lighting (for now)
@@ -110,18 +110,17 @@ fn noise(pos: vec3f) -> f32 {
     let time_factor = 0.32;
 
     // diversify user generated seeds
-    let user_seed_a = f32(seed % 10)/10. - .5;
+    let user_seed_a = f32(seed % 10000)/10000. - .5;
     let user_seed_b = f32(seed % 256);
-    let user_seed_c = f32(seed);
+    let user_seed_c = f32(seed % 512);
     
     // transform seeds into usable components for the texture offset
     let seed_scalar = .9 + user_seed_a;
     let seed_x = 8.25 + seed_scalar * cos(time_factor * globals.time + user_seed_b);
-    let seed_y = 15.34 + seed_scalar * sin(time_factor * globals.time - user_seed_b);
-    let seed_z = 1.72 + 0.2 * cos(time_factor * globals.time * user_seed_c + 0.2);
+    let seed_y = 15.34 + seed_scalar * sin(time_factor * globals.time + user_seed_c);
 
     // Use seeds to generate an offset
-    let offset = vec2(seed_x, seed_y) + pos.z/seed_z;  
+    let offset = vec2(seed_x, seed_y) + pos.z/1.72;  
     let uv = (pos.xy + offset)/64.;
 
     // Result to occupy range of approx. [-0.5 to 0.5],

@@ -28,7 +28,7 @@ fn fragment(
     let blue_noise = textureSample(blue_noise_texture, blue_noise_sampler, uv).r;
     let offset = fract(blue_noise);
 
-    return densityRaymarch(ro, rd, offset);
+    return density_raymarch(ro, rd, offset);
 }
 
 fn sdSphere(p: vec3f, radius: f32) -> f32 {
@@ -38,12 +38,12 @@ fn sdSphere(p: vec3f, radius: f32) -> f32 {
 // An ellipse is defined by x^2/a^2 + y^2/b^2 + z^2/c^2 = 1
 // Each axis length is defined by a,b,c respectively.
 // The input axes represents 1/a^2,1/b^2,1/c^2 and ranges from [0,inf) in value
-fn sdEllipse(p: vec3f, axes: vec3f) -> f32 {
+fn sd_ellipse(p: vec3f, axes: vec3f) -> f32 {
     return dot(p * p, axes) - 1.;
 }
 
-fn sdCloud(p: vec3f) -> f32 {
-    return fbm(p) - sdEllipse(p, vec3(COEF_A, COEF_B, COEF_C));
+fn sd_cloud(p: vec3f) -> f32 {
+    return fbm(p) - sd_ellipse(p, vec3(COEF_A, COEF_B, COEF_C));
 }
 
 // Hard coded ellipse axis lengths and eqn coefficients:
@@ -62,14 +62,14 @@ const MARCH_SIZE = 2*(CAMERA_Z_DIST + EPSILON)/f32(STEPS);
 const LIGHT_COLOUR = vec3(1., .85, .52);
 const GLOBAL_ILLUMINATION = vec3(.34, .34, .42);
 
-fn densityRaymarch(ro: vec3f, rd: vec3f, offset: f32) -> vec4f {
+fn density_raymarch(ro: vec3f, rd: vec3f, offset: f32) -> vec4f {
     // Establish the minimal illumination of the cloud (base colour)
     var out = vec4(GLOBAL_ILLUMINATION, 0.);
 
     let march_step = MARCH_SIZE * rd;
     var p = ro + march_step * offset;
     for (var i = 0; i < STEPS; i = i + 1){
-        let density = sdCloud(p);
+        let density = sd_cloud(p);
         if density > 0.0 {
             // Determine how much light should illuminate this part of the cloud
             // by considering the cumulative and local densities.
@@ -91,7 +91,7 @@ fn lighting_colour(pos: vec3f, density: f32, alpha: f32) -> vec3f {
 
     // When diffuse > 0, sunlight is supposedly hitting this part of the cloud more directly
     // Determine the isolated colour from light direction only
-    let diffuse = (density - sdCloud(pos - light_direction));
+    let diffuse = (density - sd_cloud(pos - light_direction));
     let direction_mixer = 2.2 * max(diffuse, 0.);
     let direction_colour = mix(LIGHT_COLOUR, GLOBAL_ILLUMINATION, exp(-direction_mixer));
 

@@ -31,7 +31,7 @@ fn fragment(
     return density_raymarch(ro, rd, offset);
 }
 
-fn sdSphere(p: vec3f, radius: f32) -> f32 {
+fn sd_sphere(p: vec3f, radius: f32) -> f32 {
     return length(p)-radius;
 }
 

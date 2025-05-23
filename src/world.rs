@@ -5,6 +5,7 @@ use compute::distributions::Distribution;
 use compute::prelude::Normal;
 use rand::Rng;
 
+use crate::app_state::AppState;
 use crate::cloud_material::CloudMaterial;
 use crate::region::Region;
 use crate::region_set::RegionSet;
@@ -26,8 +27,14 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ClearColor(DARK_GRAY))
+            .init_state::<AppState>()
             .add_systems(Startup, setup)
-            .add_systems(Update, (scroll_camera, despawn_platform, spawn_platform));
+            .add_systems(Update, (despawn_platform, spawn_platform))
+            .add_systems(
+                Update,
+                (wait_for_first_jump).run_if(in_state(AppState::WaitingToJump)),
+            )
+            .add_systems(Update, (scroll_camera).run_if(in_state(AppState::Jumping)));
     }
 }
 
@@ -75,6 +82,26 @@ pub fn setup(mut commands: Commands, window: Query<&Window, With<PrimaryWindow>>
         ),
         Ground,
     ));
+}
+
+fn wait_for_first_jump(
+    mut next_state: ResMut<NextState<AppState>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+) {
+    if keyboard_input.any_pressed([
+        KeyCode::Enter,
+        KeyCode::Space,
+        KeyCode::ArrowDown,
+        KeyCode::ArrowLeft,
+        KeyCode::ArrowRight,
+        KeyCode::ArrowUp,
+        KeyCode::KeyS,
+        KeyCode::KeyA,
+        KeyCode::KeyD,
+        KeyCode::KeyW,
+    ]) {
+        next_state.set(AppState::Jumping);
+    }
 }
 
 pub fn scroll_camera(

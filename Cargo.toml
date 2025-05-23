@@ -24,5 +24,6 @@ bevy_ecs = "0.16"
 bevy_image = { version = "0.16.0", features = ["png"]}
 bevy_reflect = "0.16.0"
 bevy_render = "0.16.0"
+bevy_state = "0.16.0"
 compute = "0.2.3"
 rand = "0.9.1"

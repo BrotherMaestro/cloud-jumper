@@ -3,6 +3,7 @@ use bevy::{prelude::*, sprite::Material2dPlugin};
 use cloud_material::CloudMaterial;
 use world::WorldPlugin;
 
+mod app_state;
 mod cloud_material;
 mod region;
 mod region_set;

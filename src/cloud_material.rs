@@ -1,6 +1,7 @@
 use bevy::{
     prelude::*,
     render::render_resource::{AsBindGroup, ShaderRef},
+    sprite::AlphaMode2d,
     sprite::Material2d,
 };
 
@@ -19,5 +20,9 @@ pub struct CloudMaterial {
 impl Material2d for CloudMaterial {
     fn fragment_shader() -> ShaderRef {
         "shaders/cloud_material.wgsl".into()
+    }
+
+    fn alpha_mode(&self) -> AlphaMode2d {
+        AlphaMode2d::Blend
     }
 }

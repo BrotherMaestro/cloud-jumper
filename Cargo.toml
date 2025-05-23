@@ -7,10 +7,10 @@ authors = ["Hayden Sip <hsipper@icloud.com>"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [target.'cfg(windows)'.dependencies]
-bevy = { version = "0.13" }
+bevy = { version = "0.16" }
 
 [target.'cfg(unix)'.dependencies]
-bevy = { version = "0.13", features = ["dynamic_linking", "wayland"]}
+bevy = { version = "0.16", features = ["dynamic_linking", "wayland"]}
 
 [profile.dev]
 opt-level = 1
@@ -19,9 +19,10 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy_asset = "0.13.2"
-bevy_ecs = "0.13"
-bevy_reflect = "0.13.2"
-bevy_render = "0.13.2"
+bevy_asset = "0.16.0"
+bevy_ecs = "0.16"
+bevy_image = { version = "0.16.0", features = ["png"]}
+bevy_reflect = "0.16.0"
+bevy_render = "0.16.0"
 compute = "0.2.3"
-rand = "0.8.5"
+rand = "0.9.1"

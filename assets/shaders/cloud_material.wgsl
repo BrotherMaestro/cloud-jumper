@@ -1,4 +1,4 @@
-#import bevy_pbr::forward_io::VertexOutput
+#import bevy_sprite::mesh2d_vertex_output::VertexOutput
 
 #import bevy_render::globals::Globals
 @group(0) @binding(1) var<uniform> globals: Globals; 

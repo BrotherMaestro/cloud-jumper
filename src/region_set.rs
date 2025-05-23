@@ -28,7 +28,7 @@ impl RegionSet {
     pub fn random(&self) -> Option<Region> {
         let len = self.set.len();
         if len > 0 {
-            let random_index = rand::thread_rng().gen_range(0..len);
+            let random_index = rand::rng().random_range(0..len);
             unsafe { Some(*self.set.get_unchecked(random_index)) }
         } else {
             None
